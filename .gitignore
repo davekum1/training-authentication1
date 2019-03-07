@@ -1,0 +1,11 @@
+/bin
+/build
+/agent
+*.log
+.DS_Store
+.project
+.settings
+/BOOT-INF/
+/META-INF/
+/launch
+.gradle
