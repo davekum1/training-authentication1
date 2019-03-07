@@ -1,0 +1,43 @@
+appinfo:
+  title: Training Authorization REST API demo
+  description: Training Authorization REST API demo
+  apiVersion: 1.0.0
+  termsOfServiceUrl: https://www.google.com
+  contact:
+    name: Kollaboralabs
+    url: Kollaboralabs
+    email: Kollaboralabs
+  license: Kollaboralabs
+  licenseUrl: Kollaboralabs
+
+spring:
+  application:
+    appSecret: secretKey
+  datasource:
+    platform: postgres
+    type: org.apache.tomcat.jdbc.pool.DataSource
+#    url: jdbc:postgresql://localhost:5433/auth_service
+    url: jdbc:postgresql://dkumoro1.c6cwulnbr98w.ap-southeast-1.rds.amazonaws.com:5432/auth_service
+    username: dkumoro
+    password: password
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  jpa:
+      properties:
+        hibernate:
+          max_fetch_depth: 5
+          show_sql: false
+          format_sql: false
+          jdbc:
+            fetch_size: 50
+            batch_size: 50
+
+logging:
+  level:
+    org.springframework.security: info
+    org.springframework.cache: info
+    org.hibernate.type.descriptor.sql.BasicBinder: info
+    net.sf.ehcache: info
+    com.kollaboralabs: info 
+    org.hibernate: info

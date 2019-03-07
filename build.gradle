@@ -1,0 +1,142 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath('se.transmode.gradle:gradle-docker:1.2')
+    }
+    ext['flyway.version'] = '4.2.0'
+}
+
+plugins {
+    id 'org.springframework.boot' version '1.5.3.RELEASE'
+    id 'org.flywaydb.flyway' version '4.2.0'
+    id 'com.palantir.jacoco-full-report' version '0.4.0'
+}
+
+apply plugin: 'docker'
+apply plugin: 'jacoco'
+
+jar {
+    baseName = 'training-authentication'
+    version = '1.0.0'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile('com.amazonaws:aws-java-sdk-core:1.11.133')
+    compile('com.amazonaws:aws-java-sdk-ses:1.11.133')
+    compile('com.fasterxml.jackson.datatype:jackson-datatype-jsr310')
+    compile('com.sndyuk:logback-more-appenders:1.4.1')
+    compile('com.tngtech.java:junit-dataprovider:1.12.0')
+    compile('commons-codec:commons-codec')
+    compile('commons-validator:commons-validator:1.6')
+    compile('io.springfox:springfox-swagger2:2.6.1')
+    compile('io.springfox:springfox-swagger-ui:2.6.1')
+    compile('org.apache.commons:commons-lang3:3.5')
+    compile('org.fluentd:fluent-logger:0.3.2')
+    compile('org.flywaydb:flyway-core')
+    compile('org.modelmapper:modelmapper:0.7.7')
+    compile('org.json:json:20090211')
+    compile('org.projectlombok:lombok')
+    compile('org.springframework.boot:spring-boot-starter-actuator')
+    compile('org.springframework.boot:spring-boot-starter-cache')
+    compile('org.springframework.boot:spring-boot-starter-data-jpa')
+    compile('org.springframework.boot:spring-boot-starter-web')
+    compile('org.springframework.boot:spring-boot-starter-data-jpa')
+    compile('org.springframework.cloud:spring-cloud-starter-config')
+    compile('org.springframework.cloud:spring-cloud-starter-sleuth')
+    compile('org.springframework.security:spring-security-core')
+    compile('org.springframework.security:spring-security-crypto')
+    compile('org.springframework.boot:spring-boot-starter-thymeleaf')
+
+    runtime('org.postgresql:postgresql')
+
+    testCompile('commons-beanutils:commons-beanutils')
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile('org.jsoup:jsoup:1.10.2')
+}
+
+sourceSets {
+    test {
+        resources {
+            srcDirs = [
+                'src/test/resources',
+                'src/main/resources',
+            ]
+            includes = ['**/*']
+        }
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.8
+            }
+            enabled = true
+            element = 'CLASS'
+            excludes = [
+                'com.kollaboralabs.auth.AuthApplication',
+                'com.kollaboralabs.auth.config.*',
+                'com.kollaboralabs.auth.domain.*',
+                'com.kollaboralabs.auth.entity.*',
+                'com.kollaboralabs.auth.exception.*',
+            ]
+        }
+    }
+}
+
+jacocoTestReport {
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                'com/kollaboralabs/auth/AuthApplication**',
+                'com/kollaboralabs/auth/config/**',
+                'com/kollaboralabs/auth/domain/**',
+                'com/kollaboralabs/auth/entity/**',
+                'com/kollaboralabs/auth/exception/**'
+                
+            ])
+        })
+    }
+}
+
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:Camden.SR6'
+    }
+}
+
+task wrapper(type: Wrapper) {
+    group = 'build'
+    description = 'Build the Gradle wrapper'
+    gradleVersion = '3.5'
+}
+
+import org.apache.tools.ant.taskdefs.condition.Os
+task buildDocker(type: Docker, dependsOn: build) {
+    group = 'build'
+    description = 'Build a Docker container'
+    push = project.hasProperty('push')
+    tag = 'kollaboralabs/auth'
+    if (Os.isFamily(Os.FAMILY_UNIX))
+        dockerBinary = 'sudo docker'
+    dockerfile = file('src/main/docker/Dockerfile')
+    doFirst {
+        copy {
+            from jar
+            from 'agent'
+            into stageDir
+        }
+    }
+}
